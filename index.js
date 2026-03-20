@@ -1,13 +1,14 @@
+require("dotenv").config()
 const Typesense = require('typesense');
 
 // 1. Create a client to connect to the Typesense server
 const client = new Typesense.Client({
     nodes: [{
-        host: 'localhost',
-        port: '8108',
-        protocol: 'http'
+        host: process.env.HOST,
+        port: process.env.PORT,
+        protocol: process.env.PROTOCOL
     }],
-    apiKey: 'xyz', // The same key we used in the Docker command
+    apiKey: process.env.API_KEY, // The same key we used in the Docker command
     connectionTimeoutSeconds: 2
 });
 
@@ -51,7 +52,6 @@ async function indexData() {
     console.log("Indexing products...");
     await client.collections('products').documents().import(products, { action: 'create' });
 }
-
 //4. search and filter
 async function searchProducts() {
     const searchParameters = {

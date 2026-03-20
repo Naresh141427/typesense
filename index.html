@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My E-Commerce Store</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@7/themes/satellite-min.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            display: flex;
+            gap: 30px;
+        }
+
+        #sidebar {
+            width: 250px;
+        }
+
+        #results {
+            flex-grow: 1;
+        }
+
+        .hit-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar">
+        <h3>Filter by Brand</h3>
+        <div id="brand-list"></div>
+        <h3>Filter by Category</h3>
+        <div id="category-list"></div>
+    </div>
+
+    <div id="results">
+        <div id="searchbox"></div>
+        <br>
+        <div id="hits"></div>
+        <div id="pagination"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/typesense-instantsearch-adapter@2/dist/typesense-instantsearch-adapter.min.js"></script>
+
+    <script>
+        // A. Connect to your local Typesense Docker container
+        const typesenseAdapter = new TypesenseInstantSearchAdapter({
+            server: {
+                apiKey: 'xyz', // Your actual search API key
+                nodes: [{ host: 'localhost', port: '8108', protocol: 'http' }]
+            },
+            additionalSearchParameters: {
+                query_by: 'title,description',
+                query_by_weights: '3,1'
+            }
+        });
+
+        // B. Initialize the UI pointing to your Alias
+        const search = instantsearch({
+            searchClient: typesenseAdapter.searchClient,
+            indexName: 'products_live' // 👈 Using the alias!
+        });
+
+        // C. Add the visual widgets
+        search.addWidgets([
+            // The Search Bar
+            instantsearch.widgets.searchBox({
+                container: '#searchbox',
+                placeholder: 'Search for laptops, shoes...',
+            }),
+
+            // The Sidebar Filters (Facets)
+            instantsearch.widgets.refinementList({
+                container: '#brand-list',
+                attribute: 'brand', // Matches the facet:true field in your schema
+            }),
+            instantsearch.widgets.refinementList({
+                container: '#category-list',
+                attribute: 'category',
+            }),
+
+            // The Product Results
+            instantsearch.widgets.hits({
+                container: '#hits',
+                templates: {
+                    item(hit) {
+                        return `
+              <div class="hit-box">
+                <h2>${hit._highlightResult.title.value}</h2>
+                <p>${hit.description}</p>
+                <strong>$${hit.price}</strong> | <i>${hit.brand}</i>
+              </div>
+            `;
+                    }
+                }
+            }),
+
+            // The Pagination
+            instantsearch.widgets.pagination({
+                container: '#pagination',
+            })
+        ]);
+
+        // D. Start the app!
+        search.start();
+    </script>
+</body>
+
+</html>
